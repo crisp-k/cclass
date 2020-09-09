@@ -70,47 +70,76 @@ monster** readMonsters(FILE* inFile, int *monsterCount)
 
     fscanf(inFile, "%d %*s", monsterCount);
 
-    printf("\n");                                              // To delete (X)
-    printf("%i\n", *monsterCount);                             // X
-
     // Creates an array of structures
     monsterList = (struct monster**) malloc(*monsterCount * (sizeof(struct monster)));
 
     for(i = 0; i < *monsterCount; i ++)
     {
         fscanf(inFile, "%s %s %d", name, element, &population);
-        printf("%s %s %d\n", name, element, population);                // X
         monsterList[i] = createMonster(name, element, population);
     }
-    printf("\nPrinted directly from monster list:\n");                  // X
 
-    for(i = 0; i < *monsterCount; i ++)                                 // X
+/*
+   for(i = 0; i < *monsterCount; i ++)                                 // X
     {
         printf("%s %s %d\n", monsterList[i]->name, monsterList[i]->element, monsterList[i]->population);
     }
 
     printf("\n");                                                       // X
+*/
 
     return monsterList;
 }
 
 region* createRegion(char *name, int nMonsters, int population, monster **monsterList)
 {
+    region *newRegion;
 
+
+
+
+
+    return newRegion;
 }
 
-
-region** readRegions(FILE* infile, int *regionCount, monster **monsterList)
+region** readRegions(FILE* inFile, int *regionCount, int *monsterCount, monster **monsterList)
 {
-    region ** regionList, *region;
-    char name[MAXCHAR];
-    int nRegions, nMonsters, population;
+    region **regionList, *region;
+    monster **regionMonsters;
+    char regionName[MAXCHAR], monsterName[MAXCHAR], **rMonsterList;
+    int nMonsters, population;
 
-    fscanf("%d %*s", &nRegions);
-    printf("%i", nRegions);
+    // Gets number of regions
+    fscanf(inFile, "%d %*s", regionCount);
+    printf("%i regions\n\n", *regionCount);
 
+    regionList = (struct region**) malloc(*regionCount * sizeof(struct region));
 
+    // Iterates through regions
+    for(int i = 0; i < *regionCount; i++)
+    {
+        // Reads data for region[i]
+        fscanf(inFile, "%s", regionName);
+        fscanf(inFile, "%d %*s", &nMonsters);
 
+        printf("%s\n", regionName);
+        printf("%d monsters\n", nMonsters);
+
+        rMonsterList = (char**) malloc(nMonsters * sizeof(char*));
+
+        for(int j = 0; j < nMonsters; j++)
+        {
+            fscanf(inFile, "%s", monsterName);
+            rMonsterList[j] = (char*) malloc((strlen(monsterName) + 1) * sizeof(char));
+            strcpy(rMonsterList[j], monsterName);
+
+            printf("%s\n", rMonsterList[j]);
+        }
+        printf("\n\n");
+
+    }
+
+    return regionList;
 }
 
 /*
@@ -133,8 +162,9 @@ trainer** readTrainer(FILE* infile, int *numTrainers)
 int main(void)
 {
     monster **monsterList;
+    region **regionList;
     FILE *input, *output;
-    int monsterCount;
+    int monsterCount, regionCount;
     char region[MAXCHAR], type[MAXCHAR], strText[MAXCHAR];
     int numFound;
 
@@ -149,6 +179,7 @@ int main(void)
     else
     {
         monsterList = readMonsters(input, &monsterCount);
+        regionList = readRegions(input, &regionCount, &monsterCount, monsterList);
     }
     
 /*
