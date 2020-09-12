@@ -193,11 +193,12 @@ trainer* createTrainer(char *name, itinerary *visits)
 }
 */
 
-trainer** readTrainers(FILE* inFile, int *trainerCount, int **nCaptures, int **nRegions)
+trainer** readTrainers(FILE* inFile, int *trainerCount, int **nCaptures, int **nRegions, char ****tRegionNames)
 {
     trainer **trainerList;
     int i;
     int *tempCaptures, *tempRegions;
+    char ***tempRegionNames, regionName[MAXCHAR];
 
     char trainerName[MAXCHAR];
 
@@ -206,6 +207,7 @@ trainer** readTrainers(FILE* inFile, int *trainerCount, int **nCaptures, int **n
     trainerList = (struct trainer **) malloc(*trainerCount * sizeof(struct trainer*));
     tempCaptures = (int*) malloc(*trainerCount * sizeof(int));
     tempRegions = (int*) malloc(*trainerCount * sizeof(int));
+    tempRegionNames = (char***) malloc(*trainerCount * sizeof(char**));
 
     for(int i = 0; i < *trainerCount; i++)
     {
@@ -213,17 +215,26 @@ trainer** readTrainers(FILE* inFile, int *trainerCount, int **nCaptures, int **n
         fscanf(inFile, "%d %*s", &tempCaptures[i]);
         fscanf(inFile, "%d %*s", &tempRegions[i]);
 
+        tempRegionNames[i] = (char**) malloc(tempRegions[i] * sizeof(char*));
+
         for(int j = 0; j < tempRegions[i]; j++)
         {
-            fscanf(inFile, "%*s");
+
+            fscanf(inFile, "%s", regionName);
+            //printf("regionName: %s\n", regionName);
+            tempRegionNames[i][j] = (char*) malloc((strlen(regionName)+ 1) * sizeof(char));
+            strcpy(tempRegionNames[i][j], regionName);     
+
+            //printf("tempRegionNames[%i][%i]: %s\n", i, j, tempRegionNames[i][j]);
         }
 
     }
 
     *nCaptures = tempCaptures;
     *nRegions = tempRegions;
+    *tRegionNames = tempRegionNames;
 
-    
+
     return trainerList;
 }
 
@@ -238,7 +249,8 @@ int main(void)
     int monsterCount, regionCount, trainerCount;
     int *nCaptures, *nRegions;
     char region[MAXCHAR], type[MAXCHAR], strText[MAXCHAR];
-    int i;
+    char*** tRegionNames;
+    int i, j;
 
     // Opens file, and checks if the file is == NULL
     // If != NULL, begins reading data from input file
@@ -252,7 +264,7 @@ int main(void)
     {
         monsterList = readMonsters(input, &monsterCount);
         regionList = readRegions(input, &regionCount, &monsterCount, monsterList);
-        trainerList = readTrainers(input, &trainerCount, &nCaptures, &nRegions);
+        trainerList = readTrainers(input, &trainerCount, &nCaptures, &nRegions, &tRegionNames);
     }
     printf("trainerCount: %i\n", trainerCount);
 
@@ -269,6 +281,14 @@ int main(void)
         printf("%i ", nRegions[i]);
     }
     printf("\n");
+
+    for(i = 0; i < trainerCount; i++)
+    {
+        for(j = 0; j < nRegions[i]; j++)
+        {
+            printf("tempRegionNames[%i][%i]: %s\n", i, j, tRegionNames[i][j]);
+        }
+    }
 
     return 0;
 }
