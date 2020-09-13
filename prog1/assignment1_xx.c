@@ -182,7 +182,7 @@ itinerary* createItinerary(int *nRegions, region **regionList, int regionCount, 
     newItinerary->nregions = *nRegions;
     newItinerary->captures = *nCaptures;
 
-/*
+
 
     // Loops through the number of regions specified by trainer
     for(i = 0; i < newItinerary->nregions; i++)
@@ -212,7 +212,7 @@ itinerary* createItinerary(int *nRegions, region **regionList, int regionCount, 
             }
         }
     }
-*/
+
 
     return newItinerary;
 }

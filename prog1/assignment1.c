@@ -4,6 +4,7 @@ This program is written by: Kyle Crisp */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define MAXCHAR 51
 
@@ -83,17 +84,25 @@ monster** readMonsters(FILE* inFile, int *monsterCount)
     return monsterList;
 }
 
-/*
 
-region* retrieveRegion(trainer **trainerList, region **regionList, int regionIndex)
+region* retrieveRegion(region **regionList, int regionIndex)
 {
-    region *foundRegion = (struct region*) malloc(sizeof(struct region);
+    region *foundRegion = (struct region*) malloc(sizeof(struct region));
 
+    foundRegion->monsters = (struct monster**) malloc((regionList[regionIndex]->nmonsters) * sizeof(struct monster*));
 
+    for(int i = 0; i < regionList[regionIndex]->nmonsters; i++)
+    {
+        foundRegion->monsters[i] = regionList[regionIndex]->monsters[i];
+    }
+    
+    foundRegion->name = regionList[regionIndex]->name;
+    foundRegion->nmonsters = regionList[regionIndex]->nmonsters;
+    foundRegion->total_population = regionList[regionIndex]->total_population;
 
     return foundRegion;
 }
-*/
+
 
 region* createRegion(char *name, int nMonsters, int *monsterCount, char **rMonsterName, monster **monsterList)
 {
@@ -182,10 +191,7 @@ itinerary* createItinerary(int nRegions, int nCaptures)
 {
     itinerary *newItinerary = (struct itinerary*) malloc(sizeof(struct itinerary));
 
-    //newItinerary->nregions = (int*) malloc(sizeof(int));
     newItinerary->nregions = nRegions;
-
-    //newItinerary->captures = (int*) malloc(sizeof(int));
     newItinerary->captures = nCaptures;
 
     newItinerary->regions = (struct region**) malloc(nRegions * sizeof(struct region*));
@@ -250,7 +256,15 @@ trainer** readTrainers(FILE* inFile, int *trainerCount, int **nCaptures, int **n
     return trainerList;
 }
 
+float estimateCaptures(int trainerCapture, int total_population, int monsterPop)
+{
+    float percentPop = (float) monsterPop/total_population;
+    float expectCapture = percentPop * trainerCapture;
 
+    expectCapture = round(expectCapture);
+
+    return expectCapture;
+}
 
 
 int main(void)
@@ -259,11 +273,13 @@ int main(void)
     region **regionList;
     trainer **trainerList;
     FILE *input, *output;
+    
     int monsterCount, regionCount, trainerCount;
     int *nCaptures, *nRegions;
+    float ***expectedCapture;
     char region[MAXCHAR], type[MAXCHAR], strText[MAXCHAR];
-    char*** tRegionNames;
-    int i, j;
+    char ***tRegionNames;
+    int i, j, k;
 
     // Opens file, and checks if the file is == NULL
     // If != NULL, begins reading data from input file
@@ -279,29 +295,47 @@ int main(void)
         regionList = readRegions(input, &regionCount, &monsterCount, monsterList);
         trainerList = readTrainers(input, &trainerCount, &nCaptures, &nRegions, &tRegionNames);
 
+        expectedCapture = (float***) malloc(trainerCount * sizeof(float**));
 
         for(i = 0; i < trainerCount; i++)
         {
-
             trainerList[i]->visits = createItinerary(nRegions[i], nCaptures[i]);
+
+            expectedCapture[i] = (float**) malloc(nRegions[i] * sizeof(float*));
+
             for(j = 0; j < nRegions[i]; j++)
             {
-                for(int k = 0;  k < regionCount; k++)
+                for(k = 0;  k < regionCount; k++)
                 {
                     if(strcmp(tRegionNames[i][j], regionList[k]->name) == 0)
                     {
-                        //trainerList[i]->visits->regions[j] = retreiveRegion(trainerList, regionList, k);
+                        trainerList[i]->visits->regions[j] = retrieveRegion(regionList, k);
                     }
                 }
-            } 
 
+                expectedCapture[i][j] = (float*) malloc((trainerList[i]->visits->regions[j]->nmonsters) * sizeof(float));
+
+                for(k = 0; k < trainerList[i]->visits->regions[j]->nmonsters; k++)
+                {
+                    expectedCapture[i][j][k] = estimateCaptures(trainerList[i]->visits->captures, 
+                                                       trainerList[i]->visits->regions[j]->total_population,
+                                                       trainerList[i]->visits->regions[j]->monsters[k]->population);
+
+                }
+
+                printf("\n\n");
+
+            }
+
+            
+
+            
         }
-
     }
 
 
 
-
+/*
     printf("trainerCount: %i\n", trainerCount);
 
     printf("-----INSIDE MAIN-------\n");
@@ -325,14 +359,39 @@ int main(void)
             printf("tempRegionNames[%i][%i]: %s\n", i, j, tRegionNames[i][j]);
         }
     }
-
+*/
     for(i = 0; i < trainerCount; i++)
     {
+        /*
         printf("%s\n", trainerList[i]->name);
-        
-
+    
         printf("trainerList[%i]->visits->nregions: %i\n", i, trainerList[i]->visits->nregions);
-        printf("trainerList[%i]->visits->captures: %i\n\n", i , trainerList[i]->visits->captures);
+        printf("trainerList[%i]->visits->captures: %i\n", i , trainerList[i]->visits->captures);
+*/
+        for(j = 0; j < nRegions[i]; j++)
+        {
+            /*
+            printf("\ntrainerList[%i]->visits->regions[%i]->name: %s\n", i, j, trainerList[i]->visits->regions[j]->name);
+            printf("trainerList[%i]->visits->regions[%i]->nmonsters: %i\n", i, j, trainerList[i]->visits->regions[j]->nmonsters);
+            printf("trainerList[%i]->visits->regions[%i]->tot_pop: %i\n", i, j, trainerList[i]->visits->regions[j]->total_population);
+*/
+            for(k = 0; k < trainerList[i]->visits->regions[j]->nmonsters; k++)
+            {
+                /*
+                printf("trainerList[%i]->visits->regions[%i]->monsters: %s\n", i, j, trainerList[i]->visits->regions[j]->monsters[k]->name);
+                printf("trainerList[%i]->visits->regions[%i]->monsters: %s\n", i, j, trainerList[i]->visits->regions[j]->monsters[k]->element);
+                printf("trainerList[%i]->visits->regions[%i]->monsters: %i\n", i, j, trainerList[i]->visits->regions[j]->monsters[k]->population);
+                */
+
+               printf("Expected Captures[%i][%i][%i]: %.2f\n", i, j, k, expectedCapture[i][j][k]);
+            }
+        }
+
+        printf("\n\n");
     }
+
+  
+
+    
     return 0;
 }
