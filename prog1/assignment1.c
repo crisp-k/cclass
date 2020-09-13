@@ -68,7 +68,6 @@ monster** readMonsters(FILE* inFile, int *monsterCount)
     char name[MAXCHAR], element[MAXCHAR];
     int population;
     
-
     fscanf(inFile, "%d %*s", monsterCount);
 
     // Creates an array of structures
@@ -84,18 +83,18 @@ monster** readMonsters(FILE* inFile, int *monsterCount)
     return monsterList;
 }
 
-
+// Fills a placeholder structure with information from a
+// region structure
 region* retrieveRegion(region **regionList, int regionIndex)
 {
+    // Allocates space to structures
     region *foundRegion = (struct region*) malloc(sizeof(struct region));
-
     foundRegion->monsters = (struct monster**) malloc((regionList[regionIndex]->nmonsters) * sizeof(struct monster*));
 
+    // Fills structures with data
     for(int i = 0; i < regionList[regionIndex]->nmonsters; i++)
-    {
         foundRegion->monsters[i] = regionList[regionIndex]->monsters[i];
-    }
-    
+
     foundRegion->name = regionList[regionIndex]->name;
     foundRegion->nmonsters = regionList[regionIndex]->nmonsters;
     foundRegion->total_population = regionList[regionIndex]->total_population;
@@ -103,7 +102,8 @@ region* retrieveRegion(region **regionList, int regionIndex)
     return foundRegion;
 }
 
-
+// Takes read data from file and fills a 
+// new region structure accordingly
 region* createRegion(char *name, int nMonsters, int *monsterCount, char **rMonsterName, monster **monsterList)
 {
     int i, j, nameLen, popTotal = 0;
@@ -139,15 +139,21 @@ region* createRegion(char *name, int nMonsters, int *monsterCount, char **rMonst
         }
     }
 
+    newRegion->total_population = popTotal;  
+
+
+    // Frees rMonsterName, as it is no longer
+    // needed anywhere else in the program
     for(int i = 0; i < nMonsters; i++)
         free(rMonsterName[i]);
     free(rMonsterName);
 
-    newRegion->total_population = popTotal;  
-
     return newRegion;
 }
 
+// Reads data from input file
+// Allocates data for new region structure array
+// Calls createRegion to fill array of structures
 region** readRegions(FILE* inFile, int *regionCount, int *monsterCount, monster **monsterList)
 {
     region **regionList;
@@ -189,45 +195,58 @@ region** readRegions(FILE* inFile, int *regionCount, int *monsterCount, monster 
     return regionList;
 }
 
+// Creates itinerary structure and fills it with data
 itinerary* createItinerary(int nRegions, int nCaptures)
 {
+
+    // Allocates memory for structure
     itinerary *newItinerary = (struct itinerary*) malloc(sizeof(struct itinerary));
 
+    // Fills structure
     newItinerary->nregions = nRegions;
     newItinerary->captures = nCaptures;
 
+    // Allocates memory for array of regions
+    // Region structures to be filled by createRegion
     newItinerary->regions = (struct region**) malloc(nRegions * sizeof(struct region*));
 
     return newItinerary;
 }
 
+// Creates trainer structure and fills it with data
 trainer* createTrainer(char *name)
 {
+    // Allocates memory for new trainer structure
     trainer *newTrainer = (struct trainer*) malloc(sizeof(struct trainer));
+
     int nameLen = (strlen(name) + 1);
 
+    // Allocates and fills trainer name
     newTrainer->name = (char*) malloc(nameLen * sizeof(char));
     strcpy(newTrainer->name, name);
 
     return newTrainer;
 }
 
+// Reads data from input file and allocates
+// memory for this data
+// Calls createTrainer
 trainer** readTrainers(FILE* inFile, int *trainerCount, int **nCaptures, int **nRegions, char ****tRegionNames)
 {
     trainer **trainerList;
     int i;
     int *tempCaptures, *tempRegions;
-    char ***tempRegionNames, regionName[MAXCHAR];
-
-    char trainerName[MAXCHAR];
+    char ***tempRegionNames, regionName[MAXCHAR], trainerName[MAXCHAR];
 
     fscanf(inFile, "%d %*s", trainerCount);
 
+    // Allocates necessary memory for temporary data holds
     trainerList = (struct trainer **) malloc(*trainerCount * sizeof(struct trainer*));
     tempCaptures = (int*) malloc(*trainerCount * sizeof(int));
     tempRegions = (int*) malloc(*trainerCount * sizeof(int));
     tempRegionNames = (char***) malloc(*trainerCount * sizeof(char**));
 
+    // Reads lines for each trainer
     for(int i = 0; i < *trainerCount; i++)
     {
         fscanf(inFile, "%s", trainerName);
@@ -236,6 +255,7 @@ trainer** readTrainers(FILE* inFile, int *trainerCount, int **nCaptures, int **n
 
         tempRegionNames[i] = (char**) malloc(tempRegions[i] * sizeof(char*));
 
+        // Reads and stores region names
         for(int j = 0; j < tempRegions[i]; j++)
         {
 
@@ -244,10 +264,13 @@ trainer** readTrainers(FILE* inFile, int *trainerCount, int **nCaptures, int **n
             strcpy(tempRegionNames[i][j], regionName);     
         }
 
+        // Creates trainer structure
         trainerList[i] = createTrainer(trainerName);
 
     }
 
+    // Transfers data to passed variables,
+    // So values are accesible in main/other function(s)
     *nCaptures = tempCaptures;
     *nRegions = tempRegions;
     *tRegionNames = tempRegionNames;
@@ -256,16 +279,20 @@ trainer** readTrainers(FILE* inFile, int *trainerCount, int **nCaptures, int **n
     return trainerList;
 }
 
+// Performs calculations on population
 float estimateCaptures(int trainerCapture, int total_population, int monsterPop)
 {
+    // Calculates un-rounded number of expected captures
     float percentPop = (float) monsterPop/total_population;
     float expectCapture = percentPop * trainerCapture;
 
+    // Rounds number to nearest whole number
     expectCapture = round(expectCapture);
 
     return expectCapture;
 }
 
+// Frees memory allocated for monsterList
 void freeMonsterList(monster **monsterList, int monsterCount)
 {
     for(int i = 0; i < monsterCount; i++)
@@ -278,6 +305,7 @@ void freeMonsterList(monster **monsterList, int monsterCount)
     free(monsterList);
 }
 
+// Frees memory allocated for regionList
 void freeRegionList(region **regionList, int regionCount)
 {
     for(int i = 0; i < regionCount; i++)
@@ -297,6 +325,7 @@ void freeRegionList(region **regionList, int regionCount)
     free(regionList);
 }
 
+// Frees memory allocated for trainerList
 void freeTrainerList(trainer ** trainerList, int trainerCount)
 {
     for(int i = 0; i < trainerCount; i++)
@@ -327,10 +356,11 @@ int main(void)
     
     int monsterCount, regionCount, trainerCount;
     int *nCaptures, *nRegions;
+    int i, j, k;
     float ***expectedCapture;
     char region[MAXCHAR], type[MAXCHAR], strText[MAXCHAR];
     char ***tRegionNames;
-    int i, j, k;
+    
 
     // Opens file, and checks if the file is == NULL
     // If != NULL, begins reading data from input file
@@ -343,40 +373,49 @@ int main(void)
     }
     else
     {
+        // Calls functions that read and store appropriate data with
+        // corrosponding structure lists
         monsterList = readMonsters(input, &monsterCount);
         regionList = readRegions(input, &regionCount, &monsterCount, monsterList);
         trainerList = readTrainers(input, &trainerCount, &nCaptures, &nRegions, &tRegionNames);
 
+        // Allocates memory to store all expectedCapture values
         expectedCapture = (float***) malloc(trainerCount * sizeof(float**));
 
+        // Finishes filling trainerList's missing data
+        // Prints out data to terminal and output file
+        // Steps through each trainer
         for(i = 0; i < trainerCount; i++)
         {
+            // Creates itinerary structure within trainer structure
             trainerList[i]->visits = createItinerary(nRegions[i], nCaptures[i]);
 
+            // expectedCapture allocation cont.
             expectedCapture[i] = (float**) malloc(nRegions[i] * sizeof(float*));
-
 
             printf("%s\n", trainerList[i]->name);
             fprintf(output, "%s\n", trainerList[i]->name);
 
-
+            // Steps through each region
             for(j = 0; j < nRegions[i]; j++)
             {
                 for(k = 0;  k < regionCount; k++)
                 {
+                    // Fills region data for itinerary structure within trainer structures
                     if(strcmp(tRegionNames[i][j], regionList[k]->name) == 0)
                     {
                         trainerList[i]->visits->regions[j] = retrieveRegion(regionList, k);
                     
                     }
-
                 }
 
                 printf("%s\n", trainerList[i]->visits->regions[j]->name);
                 fprintf(output, "%s\n", trainerList[i]->visits->regions[j]->name);
 
+                // expectedCapture allocation cont.
                 expectedCapture[i][j] = (float*) malloc((trainerList[i]->visits->regions[j]->nmonsters) * sizeof(float));
 
+                // Performs calculations and prints out to console and out.txt
                 for(k = 0; k < trainerList[i]->visits->regions[j]->nmonsters; k++)
                 {
                     expectedCapture[i][j][k] = estimateCaptures(trainerList[i]->visits->captures, 
@@ -391,7 +430,7 @@ int main(void)
                 }
 
             }
-
+            // out.txt formatting check
             if(i < trainerCount - 1)
             {
                 printf("\n");
@@ -399,6 +438,7 @@ int main(void)
             }
         }
 
+        // Frees nested memory
         for(i = 0; i < trainerCount; i++)
         {
             for(j = 0; j < nRegions[i]; j++)
@@ -410,6 +450,7 @@ int main(void)
             free(tRegionNames[i]);
         }
 
+        // Frees rest of memory
         freeMonsterList(monsterList, monsterCount);
         freeRegionList(regionList, regionCount);
         freeTrainerList(trainerList, trainerCount);
@@ -421,59 +462,6 @@ int main(void)
         fclose(input);
         fclose(output);
     }
-
-
-/*
-    printf("trainerCount: %i\n", trainerCount);
-
-    printf("-----INSIDE MAIN-------\n");
-    printf("n captures for each trainer\n");
-    for(i = 0; i < trainerCount; i++)
-    {
-        printf("%i ", nCaptures[i]);
-    }
-
-    printf("\n\nn regions for each trainer\n");
-    for(i = 0; i < trainerCount; i++)
-    {
-        printf("%i ", nRegions[i]);
-    }
-    printf("\n");
-
-    for(i = 0; i < trainerCount; i++)
-    {
-        for(j = 0; j < nRegions[i]; j++)
-        {
-            printf("tempRegionNames[%i][%i]: %s\n", i, j, tRegionNames[i][j]);
-        }
-    }
-
-    for(i = 0; i < trainerCount; i++)
-    {
-        printf("%s\n", trainerList[i]->name);
-    
-        printf("trainerList[%i]->visits->nregions: %i\n", i, trainerList[i]->visits->nregions);
-        printf("trainerList[%i]->visits->captures: %i\n", i , trainerList[i]->visits->captures);
-
-        for(j = 0; j < nRegions[i]; j++)
-        {
-            printf("\ntrainerList[%i]->visits->regions[%i]->name: %s\n", i, j, trainerList[i]->visits->regions[j]->name);
-            printf("trainerList[%i]->visits->regions[%i]->nmonsters: %i\n", i, j, trainerList[i]->visits->regions[j]->nmonsters);
-            printf("trainerList[%i]->visits->regions[%i]->tot_pop: %i\n", i, j, trainerList[i]->visits->regions[j]->total_population);
-
-            for(k = 0; k < trainerList[i]->visits->regions[j]->nmonsters; k++)
-            {
-               
-                printf("trainerList[%i]->visits->regions[%i]->monsters: %s\n", i, j, trainerList[i]->visits->regions[j]->monsters[k]->name);
-                printf("trainerList[%i]->visits->regions[%i]->monsters: %s\n", i, j, trainerList[i]->visits->regions[j]->monsters[k]->element);
-                printf("trainerList[%i]->visits->regions[%i]->monsters: %i\n", i, j, trainerList[i]->visits->regions[j]->monsters[k]->population);
-                printf("Expected Captures[%i][%i][%i]: %.2f\n", i, j, k, expectedCapture[i][j][k]);
-            }
-        }
-    }
-*/
-
-    
 
     return 0;
 }
