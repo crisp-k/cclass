@@ -36,7 +36,7 @@ typedef struct trainer {
 
 // Takes data read from input file and fills a monster structure
 // with the appropiate data
-monster* createMonster(char *name, char *element, int *population)
+monster* createMonster(char *name, char *element, int population)
 {
     int nameLen, elementLen;
 
@@ -50,12 +50,11 @@ monster* createMonster(char *name, char *element, int *population)
     // Allocates memory space for each structure member
     newMonster->name = (char*) malloc(nameLen * sizeof(char));
     newMonster->element = (char*) malloc(elementLen * sizeof(char));
-    newMonster->population = *((int*) malloc(sizeof(int)));
 
     // Assigns values to structure members
     strncpy(newMonster->name, name, nameLen);
     strncpy(newMonster->element, element, elementLen);
-    newMonster->population = *population;
+    newMonster->population = population;
 
     return newMonster;
 }
@@ -79,7 +78,7 @@ monster** readMonsters(FILE* inFile, int *monsterCount)
     {
         // Fills monster list structures with data from each monster
         fscanf(inFile, "%s %s %d", name, element, &population);
-        monsterList[i] = createMonster(name, element, &population);
+        monsterList[i] = createMonster(name, element, population);
     }
   
     return monsterList;
@@ -114,9 +113,7 @@ region* createRegion(char *name, int nMonsters, int *monsterCount, char **rMonst
     // Allocates memory for each member of structure
     region *newRegion = (struct region*) malloc(sizeof(struct region));
     newRegion->name = (char*) malloc(nameLen * sizeof(char));
-    newRegion->nmonsters = (int) malloc(sizeof(int));
-    newRegion->total_population = (int) malloc(sizeof(int));
-    newRegion->monsters = (struct monster**) malloc(nMonsters * sizeof(struct monster));
+    newRegion->monsters = (struct monster**) malloc(nMonsters * sizeof(struct monster*));
 
 
     // Assigns values to structure members
@@ -135,12 +132,16 @@ region* createRegion(char *name, int nMonsters, int *monsterCount, char **rMonst
             if(strcmp(rMonsterName[i], monsterList[j]->name) == 0)
             {
                 
-                newRegion->monsters[i] = createMonster(monsterList[j]->name, monsterList[j]->element, &monsterList[j]->population);
+                newRegion->monsters[i] = createMonster(monsterList[j]->name, monsterList[j]->element, monsterList[j]->population);
                 newRegion->monsters[i]->population = monsterList[j]->population;
                 popTotal += monsterList[j]->population;
             }
         }
     }
+
+    for(int i = 0; i < nMonsters; i++)
+        free(rMonsterName[i]);
+    free(rMonsterName);
 
     newRegion->total_population = popTotal;  
 
@@ -176,7 +177,7 @@ region** readRegions(FILE* inFile, int *regionCount, int *monsterCount, monster 
         {
             
             fscanf(inFile, "%s", monsterName);
-            rMonsterName[j] = (char*) malloc((strlen(monsterName) + 1) * sizeof(char*));
+            rMonsterName[j] = (char*) malloc((strlen(monsterName) + 1) * sizeof(char));
             strcpy(rMonsterName[j], monsterName);
         }
 
@@ -184,11 +185,6 @@ region** readRegions(FILE* inFile, int *regionCount, int *monsterCount, monster 
         regionList[i] = createRegion(regionName, nMonsters, monsterCount, rMonsterName, monsterList);
 
     }
-
-    for(int i = 0; i < nMonsters; i++)
-        free(rMonsterName[i]);
-
-    free(rMonsterName);
 
     return regionList;
 }
@@ -212,8 +208,6 @@ trainer* createTrainer(char *name)
 
     newTrainer->name = (char*) malloc(nameLen * sizeof(char));
     strcpy(newTrainer->name, name);
-    newTrainer->visits = (struct itinerary*) malloc(sizeof(struct itinerary));
-
 
     return newTrainer;
 }
@@ -278,7 +272,6 @@ void freeMonsterList(monster **monsterList, int monsterCount)
     {
         free(monsterList[i]->name);
         free(monsterList[i]->element);
-        //free(monsterList[i]->population);
         free(monsterList[i]);
     }
 
@@ -290,9 +283,15 @@ void freeRegionList(region **regionList, int regionCount)
     for(int i = 0; i < regionCount; i++)
     {
         for(int j = 0; j < regionList[i]->nmonsters; j++)
+        {
+            free(regionList[i]->monsters[j]->name);
+            free(regionList[i]->monsters[j]->element);
             free(regionList[i]->monsters[j]);
-
+        }
+        free(regionList[i]->monsters);
+        free(regionList[i]->name);
         free(regionList[i]);
+
     }
 
     free(regionList);
@@ -303,15 +302,18 @@ void freeTrainerList(trainer ** trainerList, int trainerCount)
     for(int i = 0; i < trainerCount; i++)
     {
         for(int j = 0; j < trainerList[i]->visits->nregions; j++)
-            {
-                free(trainerList[i]->visits->regions[j]);
-            }
-        
+        {
+            free(trainerList[i]->visits->regions[j]->monsters);
+            free(trainerList[i]->visits->regions[j]);
+        }
+
+        free(trainerList[i]->visits->regions);
         free(trainerList[i]->visits);
+        free(trainerList[i]->name);
         free(trainerList[i]);
     }
 
-    //free(trainerList);
+    free(trainerList);
 }
 
 int main(void)
@@ -365,7 +367,9 @@ int main(void)
                     if(strcmp(tRegionNames[i][j], regionList[k]->name) == 0)
                     {
                         trainerList[i]->visits->regions[j] = retrieveRegion(regionList, k);
+                    
                     }
+
                 }
 
                 printf("%s\n", trainerList[i]->visits->regions[j]->name);
@@ -383,7 +387,9 @@ int main(void)
                         printf("%.0f %s\n", expectedCapture[i][j][k], trainerList[i]->visits->regions[j]->monsters[k]->name);
                         fprintf(output, "%.0f %s\n", expectedCapture[i][j][k], trainerList[i]->visits->regions[j]->monsters[k]->name);
                     }
+
                 }
+
             }
 
             if(i < trainerCount - 1)
@@ -392,6 +398,28 @@ int main(void)
                 fprintf(output, "\n");
             }
         }
+
+        for(i = 0; i < trainerCount; i++)
+        {
+            for(j = 0; j < nRegions[i]; j++)
+            {
+                free(tRegionNames[i][j]);
+                free(expectedCapture[i][j]);
+            }
+            free(expectedCapture[i]);
+            free(tRegionNames[i]);
+        }
+
+        freeMonsterList(monsterList, monsterCount);
+        freeRegionList(regionList, regionCount);
+        freeTrainerList(trainerList, trainerCount);
+        free(expectedCapture);
+        free(nRegions);
+        free(nCaptures);
+        free(tRegionNames);
+
+        fclose(input);
+        fclose(output);
     }
 
 
@@ -445,12 +473,7 @@ int main(void)
     }
 */
 
-    freeMonsterList(monsterList, monsterCount);
-    freeRegionList(regionList, regionCount);
-    freeTrainerList(trainerList, trainerCount);
-
-    fclose(input);
-    fclose(output);
+    
 
     return 0;
 }
