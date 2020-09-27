@@ -64,7 +64,7 @@ monster* createMonster(char *name, char *element, int population)
 // and calls createMonster to fill structures.
 monster** readMonsters(FILE* inFile, int *monsterCount)
 {
-    monster **monsterList, *monster;
+    monster **monsterList;
     char name[MAXCHAR], element[MAXCHAR];
     int population;
     
