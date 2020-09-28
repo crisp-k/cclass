@@ -4,20 +4,14 @@
 
 #define MAXCHAR 51
 
-typedef struct fileInfo
+typedef struct groundInfo
 {
     int groundNumber;
     char *groundName;
     int numSoldiers;
     int numToSkip;
     int numKeepAlive;
-} fileInfo;
-
-typedef struct ground
-{
-    char *groundName;
-    int numSoldiers, groundNumber;
-} ground;
+} groundInfo;
 
 typedef struct soldierNode
 {
@@ -40,40 +34,37 @@ int readNumGrounds(FILE* input)
             
     fscanf(input, "%d", &numGrounds);
 
-
     return numGrounds;
 }
 
-struct ground* allocateArrayOfGrounds(int numGrounds)
+struct groundInfo* allocateArrayOfGrounds(int numGrounds)
 {
-    struct ground *groundArray = (struct ground*) malloc(numGrounds * (sizeof(struct ground)));
+    struct groundInfo *groundInfo = (struct groundInfo*) malloc(numGrounds * (sizeof(struct groundInfo)));
 
-    return groundArray;
+    return groundInfo;
 }
 
-struct fileInfo* allocateArrayOfFileInfo(int numGrounds)
+char* allocateNameLenghth(int stringLen)
 {
-    struct fileInfo *fileInfo = (struct fileInfo*) malloc(numGrounds * (sizeof(struct fileInfo)));
+    char *newString = (char*) malloc(stringLen * (sizeof(char)));
 
-    return fileInfo;
+    return newString;
 }
 
-struct fileInfo readFile(FILE* input)
+struct groundInfo readGroundData(FILE* input)
 {
-    struct fileInfo groundInfo;
+    struct groundInfo groundInfo;
     char groundName[MAXCHAR];
 
-    fscanf(input, "%d %s %d %d %d", groundInfo.groundNumber, groundName, 
-                                    groundInfo.numSoldiers, groundInfo.numToSkip, 
-                                    groundInfo.numKeepAlive);
+    fscanf(input, "%d %s %d %d %d", &groundInfo.groundNumber, groundName, 
+                                    &groundInfo.numSoldiers, &groundInfo.numToSkip, 
+                                    &groundInfo.numKeepAlive);
     
     groundInfo.groundName = (char*) malloc (strlen(groundName) * (sizeof(char)));
     strcpy(groundInfo.groundName, groundName);
 
     return groundInfo;
 }
-
-
 
 int main(void)
 {
@@ -82,8 +73,7 @@ int main(void)
     int numGrounds, groundNumber, numSoldiers;
     int numToSkip, numKeepAlive;
 
-    ground *executionGrounds;
-    fileInfo *fileInfo;
+    groundInfo *executionGrounds;
 
     input = fopen("int.txt", "r");
     output = fopen("out.txt", "w");
@@ -94,12 +84,16 @@ int main(void)
     }
     else
     {
-
         numGrounds = readNumGrounds(input);
-        printf("%d\n", numGrounds);
+        executionGrounds = allocateArrayOfGrounds(numGrounds);
 
-        executionGrounds = allocateArrayOfStruct(numGrounds);
-    
+        for(int i = 0; i < numGrounds; i++)
+        {
+            executionGrounds[i] = readGroundData(input);
+            printf("Ground Name: %s\nGround number: %d\nNumber of Soldiers: %d\n\n", executionGrounds[i].groundName,
+                                                                                     executionGrounds[i].groundNumber,
+                                                                                     executionGrounds[i].numSoldiers);
+        }
 
         // for(int i = 0; i < numGroups; i++)
         // {
