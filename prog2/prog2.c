@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define MAXCHAR 51
+#define MAXGROUNDS 10
 
 typedef struct groundInfo
 {
@@ -13,18 +15,19 @@ typedef struct groundInfo
     int numKeepAlive;
 } groundInfo;
 
+typedef struct killQueue
+{
+    struct soldierNode *head;
+    struct soldierNode *tail;
+    struct groundInfo *queueInformation;
+} killQueue;
+
 typedef struct soldierNode
 {
     int soldierNum;
     struct soldierNode *next;
     struct soldierNode *last;
 } soldierNode;
-
-typedef struct killQueue
-{
-    struct soldierNode *head;
-    struct soldierNode *tail;
-} killQueue;
 
 
 
@@ -44,7 +47,14 @@ struct groundInfo* allocateArrayOfGrounds(int numGrounds)
     return groundInfo;
 }
 
-char* allocateNameLenghth(int stringLen)
+struct killQueue** allocateArrayOfQueues(void)
+{
+    killQueue **newQueueList = (struct killQueue**) malloc(MAXGROUNDS * sizeof(struct killQueue*));
+
+    return newQueueList;
+}
+
+char* allocateNameLength(int stringLen)
 {
     char *newString = (char*) malloc(stringLen * (sizeof(char)));
 
@@ -60,20 +70,128 @@ struct groundInfo readGroundData(FILE* input)
                                     &groundInfo.numSoldiers, &groundInfo.numToSkip, 
                                     &groundInfo.numKeepAlive);
     
-    groundInfo.groundName = (char*) malloc (strlen(groundName) * (sizeof(char)));
+    groundInfo.groundName = allocateNameLength(strlen(groundName));
     strcpy(groundInfo.groundName, groundName);
 
     return groundInfo;
+}
+
+struct killQueue* initQueue(void)
+{
+    struct killQueue *initialQueue = (struct killQueue*) malloc(sizeof(struct killQueue));
+
+    initialQueue->head = NULL;
+    initialQueue->tail = NULL;
+
+    return initialQueue;
+}
+
+
+struct killQueue enQueue(killQueue queue, int soldierNumber)
+{
+    soldierNode *soldier = (struct soldierNode*) malloc(sizeof(struct soldierNode));
+    soldierNode *traverseNode;
+
+    soldier->soldierNum = soldierNumber;
+    soldier->last = NULL;
+    soldier->next = NULL;
+
+
+    if(queue.head == NULL)
+    {
+        queue.head = soldier;
+        queue.tail = soldier;
+    }
+    else
+    {
+        traverseNode = queue.head;
+        while(traverseNode->next != NULL)
+            {
+                traverseNode = traverseNode->next;
+            }
+
+        traverseNode->next = soldier;
+        queue.tail = soldier;
+        soldier->last = traverseNode;
+        
+    }
+    
+    return queue;
+}
+
+struct killQueue* fillQueue(int numSoldiers)
+{
+    struct killQueue* queueToFill = (struct killQueue*) malloc(numSoldiers * (sizeof(struct killQueue)));
+
+    for(int i = 0; i < numSoldiers; i++)
+    {
+        for(int j = numSoldiers; j > 0; j--)
+        {
+            queueToFill[i] = enQueue(queueToFill[i], j);
+        }
+    }
+
+    return queueToFill;
+}
+
+void display(soldierNode *node)
+{
+    while(node != NULL)
+    {
+        printf("Soldier Number: %d\n", node->soldierNum);
+        node = node->next;
+    }
+}
+
+bool isEmpty(killQueue *queue)
+{
+    if(queue->head == queue->tail)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+/*  ... Not working...  */
+// void freeGroundInfoStructure(groundInfo *unusedStructure, int numStructs)
+// {
+//     for(int i; i < numStructs; i++)
+//     {
+//         free(unusedStructure[i].groundName);
+//     }
+//         free(unusedStructure);
+
+//     return ;
+// }
+
+
+struct groundInfo* groundInformationTransfer(struct groundInfo initialInfo)
+{
+    groundInfo* queueInformation = (struct groundInfo*) malloc(sizeof(struct groundInfo));
+
+    queueInformation->groundName = allocateNameLength(strlen(initialInfo.groundName + 1));
+
+    strcpy(queueInformation->groundName, initialInfo.groundName);
+    queueInformation->groundNumber = initialInfo.groundNumber;
+    queueInformation->numKeepAlive = initialInfo.numKeepAlive;
+    queueInformation->numSoldiers = initialInfo.numSoldiers;
+    queueInformation->numToSkip = initialInfo.numToSkip;
+
+    return queueInformation;
 }
 
 int main(void)
 {
     FILE *input, *output;
     char groundName[MAXCHAR];
-    int numGrounds, groundNumber, numSoldiers;
+    int numGrounds, groundNumber;
     int numToSkip, numKeepAlive;
 
-    groundInfo *executionGrounds;
+    groundInfo *groundInformation;
+    killQueue **groundQueueList;
 
     input = fopen("int.txt", "r");
     output = fopen("out.txt", "w");
@@ -84,22 +202,45 @@ int main(void)
     }
     else
     {
+        // Allocates an array of structures to hold information for each ground
         numGrounds = readNumGrounds(input);
-        executionGrounds = allocateArrayOfGrounds(numGrounds);
+        groundInformation = allocateArrayOfGrounds(numGrounds);
+
+        // Allocates data for a maximum of 10 Queues/Grounds
+        // This is allocated to 10 regardless of input
+        groundQueueList = allocateArrayOfQueues();
 
         for(int i = 0; i < numGrounds; i++)
         {
-            executionGrounds[i] = readGroundData(input);
-            printf("Ground Name: %s\nGround number: %d\nNumber of Soldiers: %d\n\n", executionGrounds[i].groundName,
-                                                                                     executionGrounds[i].groundNumber,
-                                                                                     executionGrounds[i].numSoldiers);
+            groundInformation[i] = readGroundData(input);
         }
 
-        // for(int i = 0; i < numGroups; i++)
-        // {
-        //     fscanf(input, "%d %s %d %d %d", &groundNumber, groundName, &numSoldiers, &numToSkip, &numKeepAlive);
-        //     printf("%d %s %d %d %d\n", groundNumber, groundName, numSoldiers, numToSkip, numKeepAlive);
-        // }
+        // Initalizes each queue with appropiate data read from input file
+        for(int i = 0; i < MAXGROUNDS; i++)
+        {
+            groundQueueList[i] = initQueue();
+            
+            for(int j = 0; j < numGrounds; j++)
+            {
+                if(i == groundInformation[j].groundNumber)
+                {
+                    groundQueueList[i] = fillQueue(groundInformation[j].numSoldiers);
+                    groundQueueList[i]->queueInformation = groundInformationTransfer(groundInformation[j]);
+                }                
+            }
+                //  freeGroundInfoStructure(groundInformation, numGrounds);     ...Not Working...
+
+            if(!isEmpty(groundQueueList[i]))
+            {
+                printf("Ground name: %s\n", groundQueueList[i]->queueInformation->groundName);
+                display(groundQueueList[i]->head);
+            }
+        }
+
+
+        
+        
+
     }
 
     return 0;
