@@ -86,7 +86,6 @@ struct killQueue* initQueue(void)
     return initialQueue;
 }
 
-
 struct killQueue enQueue(killQueue queue, int soldierNumber)
 {
     soldierNode *soldier = (struct soldierNode*) malloc(sizeof(struct soldierNode));
@@ -105,14 +104,16 @@ struct killQueue enQueue(killQueue queue, int soldierNumber)
     else
     {
         traverseNode = queue.head;
-        while(traverseNode->next != NULL)
+        while(traverseNode != queue.tail)
             {
                 traverseNode = traverseNode->next;
             }
 
         traverseNode->next = soldier;
         queue.tail = soldier;
+        soldier->next = queue.head;
         soldier->last = traverseNode;
+        queue.head->last = soldier;
         
     }
     
@@ -134,13 +135,19 @@ struct killQueue* fillQueue(int numSoldiers)
     return queueToFill;
 }
 
-void display(soldierNode *node)
+void display(killQueue queue)
 {
-    while(node != NULL)
+    soldierNode *traverseNode;
+
+    traverseNode = queue.head;
+
+    while(traverseNode != queue.tail)
     {
-        printf("Soldier Number: %d\n", node->soldierNum);
-        node = node->next;
+        printf("Soldier Number: %d\n", traverseNode->soldierNum);
+        traverseNode = traverseNode->next;
     }
+
+    printf("Soldier Number: %d\n", queue.tail->soldierNum);
 }
 
 bool isEmpty(killQueue *queue)
@@ -154,19 +161,6 @@ bool isEmpty(killQueue *queue)
         return false;
     }
 }
-
-/*  ... Not working...  */
-// void freeGroundInfoStructure(groundInfo *unusedStructure, int numStructs)
-// {
-//     for(int i; i < numStructs; i++)
-//     {
-//         free(unusedStructure[i].groundName);
-//     }
-//         free(unusedStructure);
-
-//     return ;
-// }
-
 
 struct groundInfo* groundInformationTransfer(struct groundInfo initialInfo)
 {
@@ -182,6 +176,77 @@ struct groundInfo* groundInformationTransfer(struct groundInfo initialInfo)
 
     return queueInformation;
 }
+
+void reverseQueueOrder(killQueue *queue)
+{
+    soldierNode *leadingNode, *trailingNode;
+
+    leadingNode = queue->head->next;
+    trailingNode = queue->head;
+
+    while(leadingNode != queue->tail)
+    {
+        trailingNode->next = trailingNode->last;
+        trailingNode->last = leadingNode;
+        trailingNode = leadingNode;
+        leadingNode = leadingNode->next;
+    }
+    trailingNode->next = trailingNode->last;
+    trailingNode->last = leadingNode;
+
+    leadingNode->next = trailingNode;
+    leadingNode->last = queue->head;
+
+    queue->tail = queue->head;
+    queue->head = leadingNode;
+}
+
+// void phaseOne(killQueue *queue)
+// {
+//     soldierNode *killNode;
+//     soldierNode *deadSoldier = (soldierNode*) malloc(sizeof(soldierNode));
+//     int soldiers = queue->queueInformation->numSoldiers;
+//     int keepAlive = queue->queueInformation->numKeepAlive;
+//     int killSkip = queue->queueInformation->numToSkip;
+
+//     killNode = queue->head;
+
+//     for(int i = 0; i < killSkip; i++)
+//     {
+//         killNode = killNode->next;
+//     }
+
+//     killNode->last->next = killNode->next;
+//     killNode->next->last = killNode->last;
+//     deadSoldier = killNode;
+
+//     // For loop conditional check is -1 due to the initial execution
+//     // before this kill block begins
+//     for(int i = 0; i < (soldiers - keepAlive) - 1; i++)
+//     {
+//         free(deadSoldier);
+//         for(int j; j <= killSkip; j++)
+//         {
+//             if(killNode == queue->tail)
+//             {
+//                 killNode = queue->head;
+//             }
+//             else
+//             {
+//                 killNode = killNode->next;
+//             }
+//         }
+//         printf("Soldier %i has been executed!\n", deadSoldier->soldierNum);
+//         if(killNode != queue->head)
+//         {
+
+//         }
+//         killNode->last->next = killNode->next;
+//         killNode->next->last = killNode->last;
+//         deadSoldier = killNode;
+//     }
+
+// }
 
 int main(void)
 {
@@ -210,6 +275,7 @@ int main(void)
         // This is allocated to 10 regardless of input
         groundQueueList = allocateArrayOfQueues();
 
+        // Reads information into ground info structure
         for(int i = 0; i < numGrounds; i++)
         {
             groundInformation[i] = readGroundData(input);
@@ -228,20 +294,21 @@ int main(void)
                     groundQueueList[i]->queueInformation = groundInformationTransfer(groundInformation[j]);
                 }                
             }
-                //  freeGroundInfoStructure(groundInformation, numGrounds);     ...Not Working...
 
             if(!isEmpty(groundQueueList[i]))
             {
+                printf("Before reverse:\n");
                 printf("Ground name: %s\n", groundQueueList[i]->queueInformation->groundName);
-                display(groundQueueList[i]->head);
+                display(*groundQueueList[i]);
+
+                reverseQueueOrder(groundQueueList[i]);
+
+                printf("After reverse:\n");
+                printf("Ground name: %s\n", groundQueueList[i]->queueInformation->groundName);
+                display(*groundQueueList[i]);
+                // // phaseOne(groundQueueList[i]);
             }
-        }
-
-
-        
-        
-
+        }        
     }
-
     return 0;
 }
