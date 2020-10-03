@@ -201,52 +201,54 @@ void reverseQueueOrder(killQueue *queue)
     queue->head = leadingNode;
 }
 
-// void phaseOne(killQueue *queue)
-// {
-//     soldierNode *killNode;
-//     soldierNode *deadSoldier = (soldierNode*) malloc(sizeof(soldierNode));
-//     int soldiers = queue->queueInformation->numSoldiers;
-//     int keepAlive = queue->queueInformation->numKeepAlive;
-//     int killSkip = queue->queueInformation->numToSkip;
+void phaseOne(killQueue *queue)
+{
+    soldierNode *killNode;
+    soldierNode *deadSoldier = (soldierNode*) malloc(sizeof(soldierNode));
+    int soldiers = queue->queueInformation->numSoldiers;
+    int keepAlive = queue->queueInformation->numKeepAlive;
+    int killSkip = queue->queueInformation->numToSkip;
 
-//     killNode = queue->head;
+    killNode = queue->head;
 
-//     for(int i = 0; i < killSkip; i++)
-//     {
-//         killNode = killNode->next;
-//     }
+    for(int i = 1; i < (killSkip - 1); i++)
+    {
+        killNode = killNode->next;
+    }
 
-//     killNode->last->next = killNode->next;
-//     killNode->next->last = killNode->last;
-//     deadSoldier = killNode;
+    deadSoldier = killNode->next;
+    killNode->next = killNode->next->next;
+    deadSoldier->next->last = killNode;
 
-//     // For loop conditional check is -1 due to the initial execution
-//     // before this kill block begins
-//     for(int i = 0; i < (soldiers - keepAlive) - 1; i++)
-//     {
-//         free(deadSoldier);
-//         for(int j; j <= killSkip; j++)
-//         {
-//             if(killNode == queue->tail)
-//             {
-//                 killNode = queue->head;
-//             }
-//             else
-//             {
-//                 killNode = killNode->next;
-//             }
-//         }
-//         printf("Soldier %i has been executed!\n", deadSoldier->soldierNum);
-//         if(killNode != queue->head)
-//         {
+    free(deadSoldier);
 
-//         }
-//         killNode->last->next = killNode->next;
-//         killNode->next->last = killNode->last;
-//         deadSoldier = killNode;
-//     }
+    // For loop conditional check is -1 due to the initial execution
+    // before this kill block begins
+    for(int i = 0; i < ((soldiers - keepAlive) - 1); i++)
+    {
+        for(int j = 0; j < (killSkip - 1); j++)
+        {
+            killNode = killNode->next;
+        }
+        
+        deadSoldier = killNode->next;
+        killNode->next = deadSoldier->next;
+        deadSoldier->next->last = killNode;
+        
+        if(deadSoldier == queue->head)
+        {
+            queue->head = deadSoldier->next; 
+        }
+        else if(deadSoldier == queue->tail)
+        {
+            queue->tail = killNode;
+        }
 
-// }
+        free(deadSoldier);
+
+    }
+
+}
 
 int main(void)
 {
@@ -281,6 +283,7 @@ int main(void)
             groundInformation[i] = readGroundData(input);
         }
 
+
         // Initalizes each queue with appropiate data read from input file
         for(int i = 0; i < MAXGROUNDS; i++)
         {
@@ -297,16 +300,18 @@ int main(void)
 
             if(!isEmpty(groundQueueList[i]))
             {
-                printf("Before reverse:\n");
-                printf("Ground name: %s\n", groundQueueList[i]->queueInformation->groundName);
-                display(*groundQueueList[i]);
+                // printf("Before reverse:\n");
+                // printf("Ground name: %s\n", groundQueueList[i]->queueInformation->groundName);
+                // printf("index %d\n", i);
+                // display(*groundQueueList[i]);
 
                 reverseQueueOrder(groundQueueList[i]);
 
-                printf("After reverse:\n");
-                printf("Ground name: %s\n", groundQueueList[i]->queueInformation->groundName);
+                // printf("After reverse:\n");
+                
+                printf("\nGround name: %s\n", groundQueueList[i]->queueInformation->groundName);
+                phaseOne(groundQueueList[i]);
                 display(*groundQueueList[i]);
-                // // phaseOne(groundQueueList[i]);
             }
         }        
     }
