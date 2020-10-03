@@ -250,6 +250,19 @@ void phaseOne(killQueue *queue)
 
 }
 
+int peek(killQueue queue)
+{
+    if(queue.head != queue.tail)
+    {
+        return queue.head->soldierNum;
+    }
+    else
+    {
+        return -1;
+    }
+    
+}
+
 int main(void)
 {
     FILE *input, *output;
