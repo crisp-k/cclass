@@ -143,11 +143,11 @@ void display(killQueue queue)
 
     while(traverseNode != queue.tail)
     {
-        printf("Soldier Number: %d\n", traverseNode->soldierNum);
+        printf(" %d", traverseNode->soldierNum);
         traverseNode = traverseNode->next;
     }
 
-    printf("Soldier Number: %d\n", queue.tail->soldierNum);
+    printf(" %d", queue.tail->soldierNum);
 }
 
 bool isEmpty(killQueue *queue)
@@ -159,6 +159,19 @@ bool isEmpty(killQueue *queue)
     else
     {
         return false;
+    }
+}
+
+void formattedDisplay(killQueue **groundQueueList)
+{
+    for(int i = 0; i < MAXGROUNDS; i++)
+    {
+        if(!isEmpty(groundQueueList[i]))
+        {
+            printf("\n%i %s", groundQueueList[i]->queueInformation->groundNumber,
+                              groundQueueList[i]->queueInformation->groundName);
+            display(*groundQueueList[i]);
+        }
     }
 }
 
@@ -220,6 +233,7 @@ void phaseOne(killQueue *queue)
     killNode->next = killNode->next->next;
     deadSoldier->next->last = killNode;
 
+    printf("\nSoldier# %d executed\n", deadSoldier->soldierNum);
     free(deadSoldier);
 
     // For loop conditional check is -1 due to the initial execution
@@ -244,23 +258,71 @@ void phaseOne(killQueue *queue)
             queue->tail = killNode;
         }
 
+        printf("Soldier# %d executed\n", deadSoldier->soldierNum);
+
         free(deadSoldier);
 
     }
 
 }
 
-int peek(killQueue queue)
+int peek(killQueue *queue)
 {
-    if(queue.head != queue.tail)
+    if(!isEmpty(queue))
     {
-        return queue.head->soldierNum;
+        return queue->head->soldierNum;
     }
     else
     {
         return -1;
+    }  
+}
+
+int minCompare(int a, int b)
+{
+    if(a < b)
+        return a;
+    else    
+        return b;
+}
+
+
+int findGroundIndexOfMax(killQueue **groundQueueList)
+{
+    int temp, max, groundIndex;
+    groundIndex = -1;
+    max = -1;
+
+    for(int i = 0; i < MAXGROUNDS; i++)
+    {
+        if(!isEmpty(groundQueueList[i]))
+        {
+            temp = peek(groundQueueList[i]);
+            if(max < temp)
+            {
+                max = temp;
+                groundIndex = i;
+            }
+            else if(max == temp)
+            {
+                groundIndex = minCompare(groundIndex, i);
+            }
+        }
     }
-    
+
+    return groundIndex;
+}
+
+
+void phaseTwo(killQueue **groundQueueList)
+{
+    int groundIndex;
+
+    for(int i = 0; i < MAXGROUNDS; i++)
+    {
+        groundIndex = findGroundIndexOfMax(groundQueueList);
+
+    }
 }
 
 int main(void)
@@ -313,20 +375,23 @@ int main(void)
 
             if(!isEmpty(groundQueueList[i]))
             {
-                // printf("Before reverse:\n");
-                // printf("Ground name: %s\n", groundQueueList[i]->queueInformation->groundName);
-                // printf("index %d\n", i);
-                // display(*groundQueueList[i]);
+                printf("\nInitial nonempty lists status");
+                printf("\n%i %s", groundQueueList[i]->queueInformation->groundNumber,
+                                  groundQueueList[i]->queueInformation->groundName);
+                display(*groundQueueList[i]);
 
                 reverseQueueOrder(groundQueueList[i]);
 
-                // printf("After reverse:\n");
-                
-                printf("\nGround name: %s\n", groundQueueList[i]->queueInformation->groundName);
-                phaseOne(groundQueueList[i]);
+                printf("\nAfter ordering nonempty lists status");
+                printf("\n%i %s", groundQueueList[i]->queueInformation->groundNumber,
+                                  groundQueueList[i]->queueInformation->groundName);
                 display(*groundQueueList[i]);
+
+                phaseOne(groundQueueList[i]);
             }
-        }        
+        }   
+
+        // phaseTwo(groundQueueList);     
     }
     return 0;
 }
