@@ -29,18 +29,27 @@ void display(struct stack* stackPtr);
 
 int checkBalance(char stack[]);
 char *infixToPostfix(char infix[]);
+
 int isOperator(char ch);
 int isParentheses(char ch);
-int prioity(char ch);
+int priority(char ch);
 
 int main() {
     char exp[SIZE];
+    char *postFix;
     int valid;
 
     printf("\nEnter Expression: ");
     scanf("%[^\n]s", exp);
-    pritnf("\nYour inputed expression is: %s\n", exp);
+    printf("\nYour inputed expression is: %s\n", exp);
     valid = checkBalance(exp);
+    // printf("\nValid: %d\n", valid);
+    if(valid)
+    {
+        postFix = infixToPostfix(exp);
+        printf("%s\n", postFix);
+    }
+
 }
 
 char *infixToPostfix(char infix[])
@@ -71,13 +80,13 @@ char *infixToPostfix(char infix[])
             {
                 push(&operators, infix[i]);
             }
-            else if(priority(infix[i] > prioity(top(&operators))))
+            else if( priority(infix[i]) > priority(top(&operators)) ) 
             {
                 push(&operators, infix[i]);
             }
             else
             {
-                while(!empty(&operators) && priority(infix[i]) <= prioity(top(&operators)) && !isParentheses(top(&operators)))
+                while(!empty(&operators) && priority(infix[i]) <= priority(top(&operators)) && !isParentheses(top(&operators)))
                 {
                     postfix[count] = pop(&operators);
                     count++;
@@ -87,15 +96,15 @@ char *infixToPostfix(char infix[])
                 push(&operators, infix[i]);
             }      
         }
-        else if(infix[i] == '(' || infix == ')')
+        else if(infix[i] == '(' || infix[i] == ')')
         {
-            if(infix[i] = '(')
+            if(infix[i] == '(')
             {
                 push(&operators, infix[i]);
             }
             else
             {
-                while(top(&operators))
+                while(top(&operators) != '(')
                 {
                     postfix[count] = pop(&operators);
                     count++;
@@ -104,53 +113,52 @@ char *infixToPostfix(char infix[])
                 }
                 pop(&operators);
             }
-        }
+        } 
     }
+    while(!empty(&operators))
+    {
+        postfix[count] = pop(&operators);
+        count++;
+        postfix[count] = ' ';
+        count++;
+    }
+    postfix[count] = '\0';
 
+    return postfix;
 }
 
 int isOperator(char ch)
 {
-    if(ch == '+' || ch == '-' || ch == '/' || ch == '*' || ch == '%')
-    {
+    if(ch == '+' || ch == '-' || ch == '/' || ch == '*' || ch == '^' || ch == '%')
         return 1;
-    }
     else
-    {
         return 0;
-    }
 }
 
 int isParentheses(char ch)
 {
-    if(ch == '{' || ch == '[' || ch == '(' || ch == ')' || ch == ']' || ch == '}');
-    {
+    if(ch == '{' || ch == '[' || ch == '(' || ch == ')' || ch == ']' || ch == '}')
         return 1;
-    }
     else
-    {
         return 0;
-    }
 }
 
-int prioity(char ch)
+int priority(char ch)
 {
     if(ch == '(' || ch == '{' || ch== '[')
-    {
-        return
-    }
-    else if(ch == '+' || ch == '-')
-    {
+        return 0;
+    
+    if(ch == '+' || ch == '-')
         return 1;
-    }
-    else if(ch == '*' || ch == '/' || ch == '%')
-    {
+    
+    if(ch == '*' || ch == '/' || ch == '%')
         return 2;
-    }
-    else if(ch == '^')
-    {
+    
+    if(ch == '^')
         return 3;
-    }
+
+    printf("fail\n");
+    return -1;
 }
 
 int checkBalance(char exp[])
@@ -187,7 +195,7 @@ int checkBalance(char exp[])
                 return valid;
             }
         }
-        else if(exp[i] == '[')
+        else if(exp[i] == ']')
         {
             char a  = pop(&mine);
             if(a != '[' || a == 'I')
@@ -199,27 +207,13 @@ int checkBalance(char exp[])
         }
     }
 
-
-
-
-
-
-
-
-
-    if(pop(&mine != 'I'))
+    if((pop(&mine) != 'I'))
     {
-        printf("Invalid:");
+        valid = 0;
+        printf("Invalid! You had extra open symbols!\n");
     }
 
-
-
-
-
-
-
-
-
+    return valid;
 }
 
 void initialize(struct stack* stackPtr) {
