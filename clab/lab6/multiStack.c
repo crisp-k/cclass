@@ -39,9 +39,9 @@ int main() {
     char *postFix;
     int valid;
 
-    printf("\nEnter Expression: ");
+    printf("Enter Expression: \n");
     scanf("%[^\n]s", exp);
-    printf("\nYour inputed expression is: %s\n", exp);
+    printf("Your inputed expression is: %s", exp);
     valid = checkBalance(exp);
     // printf("\nValid: %d\n", valid);
     if(valid)
@@ -181,7 +181,7 @@ int checkBalance(char exp[])
             if(a != '(' || a == 'I')
             {
                 valid = 0; 
-                printf("Invalid for )!");
+                printf("Invalid for )!\n");
                 return valid;
             }
         }
@@ -191,7 +191,7 @@ int checkBalance(char exp[])
             if(a != '{' || a == 'I')
             {
                 valid = 0; 
-                printf("Invalid for }!");
+                printf("Invalid for }!\n");
                 return valid;
             }
         }
@@ -201,7 +201,7 @@ int checkBalance(char exp[])
             if(a != '[' || a == 'I')
             {
                 valid = 0; 
-                printf("Invalid for ]!");
+                printf("Invalid for ]!\n");
                 return valid;
             }
         }
