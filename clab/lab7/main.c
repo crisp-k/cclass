@@ -1,5 +1,6 @@
 #include<stdio.h>
 #include <stdlib.h>
+#include "leak_detector_c.h"
 
 struct node {
      int data;
@@ -13,6 +14,8 @@ void freeList(struct node* list);
 void copy ( struct node *q, struct node **s );
 
 int main( ) {
+
+    atexit(report_mem_leak);
 
     int number = 0, choice=0;
     struct node *pList=NULL;
@@ -59,16 +62,11 @@ int main( ) {
             printf("Items in NEW linked list: ");
             print(nList);
             printf("\n");
-
-
         }
         else
         {
               break;
-
         }
-
-
     }
 
     freeList(nList);
@@ -100,7 +98,7 @@ void print(struct node *list)
 
     if(list != NULL)
     {
-        printf("%d\n", list->data);
+        printf("%d ", list->data);
         print(list->next);
     }
 }
@@ -142,8 +140,9 @@ void freeList(struct node* list)
 // copy one linked list into another
 void copy ( struct node *q, struct node **s )
 {
-    if(q->next != NULL)
+    if(q != NULL)
     {
-        **s->next = copy(q->next, **s->next);
+        *s = insert(*s, q->data);
+        copy(q->next, s);
     }
 }
