@@ -25,6 +25,21 @@ void printData(monster *monsterData, int numMonsters)
     }
 }
 
+char *getCriteriaString(int criteria)
+{
+    switch(criteria)
+    {
+        case 1:
+            return "name";
+        case 2:
+            return "weight";
+        case 3:
+            return "name and weight";
+        default:
+            return "error";
+    }
+}
+
 int isSorted(monster *monsterData, int length, int criteria)
 {
     for(int i = 0; i <length - 1; i++)
@@ -32,11 +47,13 @@ int isSorted(monster *monsterData, int length, int criteria)
         switch (criteria)
             {
             case 1:
-                if(strcmp(monsterData[i].name, monsterData[i + 1].name) > 0)
+                if(strcmp(monsterData[i].name, monsterData[i + 1].name) == 1)
                     return 0;
+                    break;
             case 2:
                 if(monsterData[i].weight > monsterData[i + 1].weight)
                     return 0;
+                    break;
                     
             // case 3:
                 // break;
@@ -54,7 +71,7 @@ monster* allocateSpaceForData(int numMonsters)
     return monsterData;
 }
 
-monster *copyToTempArray(monster *monsterData, int numMonsters)
+monster* copyToTempArray(monster *monsterData, int numMonsters)
 {
     monster *tempArray = allocateSpaceForData(numMonsters);
 
@@ -110,7 +127,7 @@ void swap(monster *a, monster *b)
     *b = temp;
 }
 
-void selectionSort(monster *data, int n, int criteria)
+void selectionSort(monster *data, int n, int criteria, sort_results *sortData)
 {
     monster temp; 
     int minIndex;
@@ -125,19 +142,16 @@ void selectionSort(monster *data, int n, int criteria)
             {
                 minIndex = j;
             }
-            // compares++;
+            sortData->compares++;
         }
 
         swap(&data[i], &data[minIndex]);
-        // temp = data[i];
-        // data[i] = data[minIndex];
-        // data[minIndex] = temp;
+        sortData->copies += 3;
 
-        // copies += 3;
     }
 }
 
-void bubbleSort(monster *data, int n, int criteria)
+void bubbleSort(monster *data, int n, int criteria, sort_results *sortData)
 {
     monster temp;
     for(int i = 0; i < n - 1; i++)
@@ -147,17 +161,14 @@ void bubbleSort(monster *data, int n, int criteria)
             if(compareTo(&data[j], &data[j + 1], criteria) == 1)
             {
                 swap(&data[j], &data[j + 1]);
-                // temp = data[j];
-                // data[j] = data[j + 1];
-                // data[j + 1] = temp;
-                // copies += 3;
+                sortData->copies += 3;
             }
-            // compares++;
+            sortData->compares++;
         }
     }
 }
 
-void insertionSort(monster *data, int n, int criteria)
+void insertionSort(monster *data, int n, int criteria, sort_results *sortData)
 {
     int value, j;
     monster temp;
@@ -165,26 +176,27 @@ void insertionSort(monster *data, int n, int criteria)
     for(int i = 1; i < n; i++)
     {
        temp = data[i];
-       // copies++;
+       sortData->copies++;
 
         for(j = i - 1; j >= 0; j--)
         {
             if(compareTo(&temp, &data[j], criteria) <= 0)
+            {
                 data[j + 1] = data[j];
-                // copies++;
-            else 
+                sortData->copies++;
+            }
+            else
                 break;  
 
-            // compares++  ;
+            sortData->compares++;
         }
 
         data[j + 1] = temp;
-        // copies++;
     }
 
 }
 
-void merge(monster *data, int left, int middle, int right, int criteria)
+void merge(monster *data, int left, int middle, int right, int criteria, sort_results *sortData)
 {
     int i, j, k;
     int  leftLength, rightLength;
@@ -198,9 +210,11 @@ void merge(monster *data, int left, int middle, int right, int criteria)
 
     for(i = 0; i < leftLength; i++)
         LTemp[i] = data[left + i];
+        sortData->copies++;
     
     for(i = 0; i < rightLength; i++)
         RTemp[i] = data[middle + 1 + i];
+        sortData->copies++;
 
     i = 0;
     j = 0;
@@ -212,14 +226,17 @@ void merge(monster *data, int left, int middle, int right, int criteria)
         {
             data[k] = LTemp[i];
             i++;
+            sortData->copies++;
         }
         else
         {
             data[k] = RTemp[j];
             j++;
+            sortData->copies++;
         }
 
         k++;
+        sortData->compares++;
 
     }
 
@@ -228,6 +245,7 @@ void merge(monster *data, int left, int middle, int right, int criteria)
         data[k] = LTemp[i];
         i++;
         k++;
+        sortData->copies++;
     }
 
     while(j < rightLength)
@@ -235,28 +253,29 @@ void merge(monster *data, int left, int middle, int right, int criteria)
         data[k] = RTemp[j];
         j++;
         k++;
+        sortData->copies++;
     }
 
     free(LTemp);
     free(RTemp);
 }
 
-void mergeSort(monster *data, int left, int right, int criteria)
+void mergeSort(monster *data, int left, int right, int criteria, sort_results *sortData)
 {
     if(left < right)
     {
         int middle = (left + right) / 2;
 
-        mergeSort(data, left, middle, criteria);
+        mergeSort(data, left, middle, criteria, sortData);
 
-        mergeSort(data, middle + 1, right, criteria);
+        mergeSort(data, middle + 1, right, criteria, sortData);
 
-        merge(data, left, middle, right, criteria);
+        merge(data, left, middle, right, criteria, sortData);
 
     }
 }
 
-int partition(monster *data, int low, int high, int criteria)
+int partition(monster *data, int low, int high, int criteria, sort_results *sortData)
 {
     int i = low + rand() % (high - low + 1);
     swap(&data[low], &data[i]);
@@ -266,13 +285,24 @@ int partition(monster *data, int low, int high, int criteria)
 
     while(low <= high)
     {
-        // while(low <= high && values[low] <= values[lowpos]) low++;
-        while(low <= high && compareTo(&data[low], &data[lowpos], criteria) <= 0) low++;
-        // while(high >= low && values[high] > values[lowpos]) high--;
-        while(high >= low && compareTo(&data[high], &data[lowpos], criteria) > 0) high--;
+        while(low <= high && compareTo(&data[low], &data[lowpos], criteria) <= 0) 
+        {
+            low++;
+            sortData->compares++;
+        }
+
+        while(high >= low && compareTo(&data[high], &data[lowpos], criteria) > 0)
+        {
+            high--;
+            sortData->compares++;
+        }
+
 
         if(low < high)
+        {
             swap(&data[low], &data[high]);
+            sortData->copies += 3;
+        }
     }
 
     swap(&data[lowpos], &data[high]);
@@ -280,26 +310,38 @@ int partition(monster *data, int low, int high, int criteria)
     return high;
 }
 
-void quickSort(monster *data, int low, int high, int criteria)
+void quickSort(monster *data, int low, int high, int criteria, sort_results *sortData)
 {
     if(low < high)
     {
-        int split = partition(data, low, high, criteria);
-        quickSort(data, low, split - 1, criteria);
-        quickSort(data, split + 1, high, criteria);
+        int split = partition(data, low, high, criteria, sortData);
+        quickSort(data, low, split - 1, criteria, sortData);
+        quickSort(data, split + 1, high, criteria, sortData);
     }
 }
 
 void selectionWrapper(monster *monsterData, int numMonsters, int criteria)
 {
             monster *tempData = copyToTempArray(monsterData, numMonsters);
-
-            printData(tempData, 25);
-            selectionSort(tempData, numMonsters, criteria);
+            sort_results *sortData;
             
-            printf("\n\n\n");
-            printData(tempData, numMonsters);
-            printf("\n\n\n");
+            sortData->compares = 0;
+            sortData->copies = 0;
+
+            if(isSorted(tempData, numMonsters, criteria) == 0)
+                printf("Array status: not sorted by %s before calling selection sort\n", getCriteriaString(criteria));
+            else
+                printf("Array status: sorted by %s before calling selection sort\n", getCriteriaString(criteria));
+
+            selectionSort(tempData, numMonsters, criteria, sortData);
+
+            printf("Total number of comparisons %lli\n", sortData->compares);
+            printf("Total number of copy operations %lli\n", sortData->copies);
+
+            if(isSorted(tempData, numMonsters, criteria) == 0)
+                printf("Array status: not sorted by %s after calling selection sort\n", getCriteriaString(criteria));
+            else
+                printf("Array status: sorted by %s after calling selection sort\n", getCriteriaString(criteria));
 
             free(tempData);
 }
@@ -307,13 +349,27 @@ void selectionWrapper(monster *monsterData, int numMonsters, int criteria)
 void bubbleWrapper(monster *monsterData, int numMonsters, int criteria)
 {
             monster *tempData = copyToTempArray(monsterData, numMonsters);
-
-            printData(tempData, 25);
-            bubbleSort(tempData, numMonsters, criteria);
+            sort_results *sortData;
             
-            printf("\n\n\n");
-            printData(tempData, numMonsters);
-            printf("\n\n\n");
+            sortData->compares = 0;
+            sortData->copies = 0;
+
+
+            if(isSorted(tempData, numMonsters, criteria) == 0)
+                printf("Array status: not sorted by %s before calling bubble sort\n", getCriteriaString(criteria));
+            else
+                printf("Array status: sorted by %s before calling bubble sort\n", getCriteriaString(criteria));
+
+
+            bubbleSort(tempData, numMonsters, criteria, sortData);
+
+            printf("Total number of comparisons %lli\n", sortData->compares);
+            printf("Total number of copy operations %lli\n", sortData->copies);
+
+            if(isSorted(tempData, numMonsters, criteria) == 0)
+                printf("Array status: not sorted by %s after calling bubble sort\n", getCriteriaString(criteria));
+            else
+                printf("Array status: sorted by %s after calling bubble sort\n", getCriteriaString(criteria));
 
             free(tempData);
 }
@@ -321,13 +377,25 @@ void bubbleWrapper(monster *monsterData, int numMonsters, int criteria)
 void insertionWrapper(monster *monsterData, int numMonsters, int criteria)
 {
             monster *tempData = copyToTempArray(monsterData, numMonsters);
+            sort_results *sortData;
 
-            printData(tempData, 25);
-            insertionSort(tempData, numMonsters, criteria);
-            
-            printf("\n\n\n");
-            printData(tempData, numMonsters);
-            printf("\n\n\n");
+            sortData->compares = 0;
+            sortData->copies = 0;
+
+            if(isSorted(tempData, numMonsters, criteria) == 0)
+                printf("Array status: not sorted by %s before calling insertion sort\n", getCriteriaString(criteria));
+            else
+                printf("Array status: sorted by %s before calling insertion sort\n", getCriteriaString(criteria));
+
+            insertionSort(tempData, numMonsters, criteria, sortData);
+
+            printf("Total number of comparisons %lli\n", sortData->compares);
+            printf("Total number of copy operations %lli\n", sortData->copies);
+
+            if(isSorted(tempData, numMonsters, criteria) == 0)
+                printf("Array status: not sorted by %s after calling insertion sort\n", getCriteriaString(criteria));
+            else
+                printf("Array status: sorted by %s after calling insertion sort\n", getCriteriaString(criteria));
 
             free(tempData);
 }
@@ -335,31 +403,55 @@ void insertionWrapper(monster *monsterData, int numMonsters, int criteria)
 void mergeWrapper(monster *monsterData, int numMonsters, int criteria)
 {
             monster *tempData = copyToTempArray(monsterData, numMonsters);
+            sort_results *sortData;
 
-            printData(tempData, 25);
-            mergeSort(tempData, 0, numMonsters - 1, criteria);
+            sortData->compares = 0;
+            sortData->copies = 0;
             
-            printf("\n\n\n");
-            printData(tempData, numMonsters);
-            printf("\n\n\n");
+            if(isSorted(tempData, numMonsters, criteria) == 0)
+                printf("Array status: not sorted by %s before calling merge sort\n", getCriteriaString(criteria));
+            else
+                printf("Array status: sorted by %s before calling merge sort\n", getCriteriaString(criteria));
+
+            mergeSort(tempData, 0, numMonsters - 1, criteria, sortData);
+
+            printf("Total number of comparisons %lli\n", sortData->compares);
+            printf("Total number of copy operations %lli\n", sortData->copies);
+
+            if(isSorted(tempData, numMonsters, criteria) == 0)
+                printf("Array status: not sorted by %s after calling merge sort\n", getCriteriaString(criteria));
+            else
+                printf("Array status: sorted by %s after calling merge sort\n", getCriteriaString(criteria));
 
             free(tempData);
 }
 
 void quickWrapper(monster *monsterData, int numMonsters, int criteria)
 {
-            monster *tempData = copyToTempArray(monsterData, numMonsters);
 
-            printData(tempData, 25);
-            quickSort(tempData, 0, numMonsters, criteria);
+            monster *tempData = copyToTempArray(monsterData, numMonsters);
+            sort_results *sortData;
             
-            printf("\n\n\n");
-            printData(tempData, numMonsters);
-            printf("\n\n\n");
+            sortData->compares = 0;
+            sortData->copies = 0;
+
+            if(isSorted(tempData, numMonsters, criteria) == 0)
+                printf("Array status: not sorted by %s before calling quick sort\n", getCriteriaString(criteria));
+            else
+                printf("Array status: sorted by %s before calling quick sort\n", getCriteriaString(criteria));
+           
+            quickSort(tempData, 0, numMonsters - 1, criteria, sortData);
+
+            printf("Total number of comparisons %lli\n", sortData->compares);
+            printf("Total number of copy operations %lli\n", sortData->copies);
+
+            if(isSorted(tempData, numMonsters, criteria) == 0)
+                printf("Array status: not sorted by %s after calling quick sort\n", getCriteriaString(criteria));
+            else
+                printf("Array status: sorted by %s after calling quick sort\n", getCriteriaString(criteria));
 
             free(tempData);
 }
-
 
 int main(void)
 {
@@ -369,31 +461,31 @@ int main(void)
     FILE *infile, *outfile;
     monster *monsterData, *sortedData;
 
-    for(int i = 0; i < 1; i++)
-    {
-        infile = fopen(fileNames[i], "r");
-
-        if(infile == NULL)
+    for(int i = 1; i <= 2; i++)
+        for(int j = 0; j < 1; j++)
         {
-            printf("Please provide a valid input file.\n");
+            infile = fopen(fileNames[j], "r");
+
+            if(infile == NULL)
+            {
+                printf("Please provide a valid input file.\n");
+            }
+            else
+            {
+                monsterData = allocateSpaceForData(numMonsters[j]);
+
+                readFile(infile, monsterData, numMonsters[j]);
+
+                selectionWrapper(monsterData, numMonsters[j], i);
+                bubbleWrapper(monsterData, numMonsters[j], i);
+                insertionWrapper(monsterData, numMonsters[j], i);
+                mergeWrapper(monsterData, numMonsters[j], i);
+                quickWrapper(monsterData, numMonsters[j], i);
+
+                free(monsterData);
+
+                fclose(infile);
+            }
         }
-        else
-        {
-            monsterData = allocateSpaceForData(numMonsters[i]);
-
-            readFile(infile, monsterData, numMonsters[i]);
-
-            // selectionWrapper(monsterData, numMonsters[i], 1);
-            // bubbleWrapper(monsterData, numMonsters[i], 1);
-            // insertionWrapper(monsterData, numMonsters[i], 2);
-            mergeWrapper(monsterData, numMonsters[i], 1);
-            // quickWrapper(monsterData, numMonsters[i], 1);
-
-            free(monsterData);
-
-
-            fclose(infile);
-        }
-    }
 
 }
